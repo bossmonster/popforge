@@ -23,6 +23,7 @@ package de.popforge.audio.output
 {
 	import flash.display.Loader;
 	import flash.events.Event;
+	import flash.events.ProgressEvent;
 	import flash.media.Sound;
 	import flash.utils.ByteArray;
 	import flash.utils.Endian;
@@ -35,9 +36,12 @@ package de.popforge.audio.output
 	 * 
 	 * @author Andre Michelle
 	 */
+	
 	public class SoundFactory
 	{
 		[Embed(source="swf.bin", mimeType="application/octet-stream")] static private const SWF: Class;
+		
+		public static var onComplete:Function = null;
 		
 		/**
 		 * Creates a flash.media.Sound object from dynamic audio material
@@ -50,7 +54,7 @@ package de.popforge.audio.output
 		 * 
 		 * @see http://livedocs.adobe.com/flex/2/langref/flash/media/Sound.html flash.media.Sound
 		 */
-		static public function fromArray( samples: Array, channels: uint, bits: uint, rate: uint, onComplete: Function ): void
+		static public function fromArray( samples: Array, channels: uint, bits: uint, rate: uint, onComplete: Function, onProgress:Function = null ): void
 		{
 			var bytes: ByteArray = new ByteArray();
 			bytes.endian = Endian.LITTLE_ENDIAN;
@@ -152,7 +156,7 @@ package de.popforge.audio.output
 		 * 
 		 * @see http://livedocs.adobe.com/flex/2/langref/flash/media/Sound.html flash.media.Sound
 		 */
-		static public function fromByteArray( bytes: ByteArray, channels: uint, bits: uint, rate: uint, onComplete: Function ): void
+		static public function fromByteArray( bytes: ByteArray, channels: uint, bits: uint, rate: uint, onComplete: Function, onProgress:Function = null ): void
 		{
 			Audio.checkAll( channels, bits, rate );
 			
@@ -209,8 +213,15 @@ package de.popforge.audio.output
 				onComplete( Sound( new ( loader.contentLoaderInfo.applicationDomain.getDefinition( 'SoundItem' ) as Class )() ) );
 			}
 			
+			var onSWFProgress:Function  = function (progressEvent:ProgressEvent):void
+			{
+				if(onProgress != null)
+					onProgress(progressEvent);
+			}
+				
 			var loader: Loader = new Loader();
 			loader.contentLoaderInfo.addEventListener( Event.COMPLETE, onSWFLoaded );
+			loader.contentLoaderInfo.addEventListener( ProgressEvent.PROGRESS, onSWFProgress);
 			loader.loadBytes( swf );
 		}
 	}
